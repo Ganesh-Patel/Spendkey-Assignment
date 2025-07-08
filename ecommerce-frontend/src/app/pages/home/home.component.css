@@ -1,0 +1,25 @@
+.hero-section {
+    background: linear-gradient(45deg, #007bff, #00c6ff);
+    padding: 60px 20px;
+    border-radius: 0 0 20px 20px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.8rem;
+    font-weight: bold;
+  }
+  
+  .product-card img {
+    height: 150px;
+    object-fit: cover;
+  }
+  
+  .product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+  

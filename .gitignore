@@ -1,0 +1,92 @@
+# Root level .gitignore for E-commerce Project
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Documentation build
+/docs/build/
+
+# Local configuration
+config.local.*
+*.local.*
+
+# Node modules (if any at root)
+node_modules/
+
+# Maven wrapper (if not using)
+.mvn/wrapper/maven-wrapper.jar
+
+# Angular cache
+.angular/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Test results
+test-results/
+*.test-results.xml
+
+# Application specific
+application-*.properties
+!application.properties
+
+# Local development files
+local/
+dev/ 
