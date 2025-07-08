@@ -376,8 +376,8 @@ This project is licensed under the MIT License.
 ## 👨‍💻 Author
 
 [Your Name]
-- Email: your.email@example.com
-- GitHub: [your-github-username]
+- Email: ganesh.oficial158@gmail.com
+- GitHub: Ganesh-Patel
 
 ---
 
