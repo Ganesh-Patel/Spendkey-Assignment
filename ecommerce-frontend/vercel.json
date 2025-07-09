@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/ecommerce-frontend",
+  "framework": "angular",
+  "installCommand": "npm install",
+  "devCommand": "npm start",
+  "env": {
+    "API_URL": "https://your-backend-url.com/api"
+  }
+} 
