@@ -61,4 +61,9 @@ export class ProductService {
   getRootCategories(): Observable<Category[]> {
     return this.http.get<Category[]>(`${this.apiUrl}/categories/root`);
   }
+
+  // Get related products for a product
+  getRelatedProducts(productId: number): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.apiUrl}/products/${productId}/related`);
+  }
 } 
