@@ -22,4 +22,48 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   }
+
+/* Line clamp utilities for text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Product card hover effects */
+.product-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive grid adjustments for home page */
+@media (max-width: 640px) {
+  .product-card {
+    min-height: 400px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .product-card {
+    min-height: 450px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .product-card {
+    min-height: 480px;
+  }
+}
   

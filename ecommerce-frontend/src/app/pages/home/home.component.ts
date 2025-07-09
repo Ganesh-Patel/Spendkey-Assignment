@@ -202,4 +202,37 @@ export class HomeComponent implements OnInit, OnDestroy {
       return { bg: 'from-purple-500 to-purple-600', icon: 'from-purple-50 to-purple-100' };
     }
   }
+
+  // Product stock and button methods
+  isProductDisabled(product: Product): boolean {
+    return !product.available || product.availabilityQty === 0;
+  }
+
+  getProductStockClass(product: Product): string {
+    if (!product.available || product.availabilityQty === 0) {
+      return 'bg-red-100 text-red-800';
+    } else if (product.availabilityQty <= 5) {
+      return 'bg-yellow-100 text-yellow-800';
+    } else {
+      return 'bg-green-100 text-green-800';
+    }
+  }
+
+  getProductStockText(product: Product): string {
+    if (!product.available || product.availabilityQty === 0) {
+      return 'Out of Stock';
+    } else if (product.availabilityQty <= 5) {
+      return `Only ${product.availabilityQty} left`;
+    } else {
+      return 'In Stock';
+    }
+  }
+
+  getButtonText(product: Product): string {
+    if (!product.available || product.availabilityQty === 0) {
+      return 'Out of Stock';
+    } else {
+      return 'Add to Cart';
+    }
+  }
 }
