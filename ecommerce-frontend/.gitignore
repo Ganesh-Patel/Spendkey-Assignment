@@ -180,11 +180,6 @@ ecommerce-frontend.log
 /build
 /out
 
-# Environment files
-environment.ts
-environment.prod.ts
-environment.development.ts
-
 # SSL certificates
 *.pem
 *.key
