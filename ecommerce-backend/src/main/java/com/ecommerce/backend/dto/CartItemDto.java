@@ -1,14 +1,15 @@
 package com.ecommerce.backend.dto;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class CartItemDto {
     private Long id;
     private Long productId;
     private String productName;
-    private BigDecimal unitPrice;
+    private Double unitPrice;
     private Integer quantity;
-    private BigDecimal totalPrice;
+    private Double totalPrice;
     
     // Constructors
     public CartItemDto() {}
@@ -17,9 +18,9 @@ public class CartItemDto {
         this.id = id;
         this.productId = productId;
         this.productName = productName;
-        this.unitPrice = unitPrice;
+        this.unitPrice = unitPrice.setScale(2, RoundingMode.HALF_UP).doubleValue();
         this.quantity = quantity;
-        this.totalPrice = totalPrice;
+        this.totalPrice = totalPrice.setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
     
     // Getters and Setters
@@ -47,11 +48,11 @@ public class CartItemDto {
         this.productName = productName;
     }
     
-    public BigDecimal getUnitPrice() {
+    public Double getUnitPrice() {
         return unitPrice;
     }
     
-    public void setUnitPrice(BigDecimal unitPrice) {
+    public void setUnitPrice(Double unitPrice) {
         this.unitPrice = unitPrice;
     }
     
@@ -63,11 +64,11 @@ public class CartItemDto {
         this.quantity = quantity;
     }
     
-    public BigDecimal getTotalPrice() {
+    public Double getTotalPrice() {
         return totalPrice;
     }
     
-    public void setTotalPrice(BigDecimal totalPrice) {
+    public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
     }
 } 

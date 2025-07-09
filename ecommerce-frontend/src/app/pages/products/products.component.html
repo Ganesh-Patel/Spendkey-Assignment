@@ -1,117 +1,111 @@
+<!-- Products Page -->
 <div class="min-h-screen bg-gray-50">
   <!-- Header -->
   <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center py-4">
-        <!-- Logo -->
-        <div class="flex items-center">
-          <div class="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-            </svg>
+      <div class="flex justify-between items-center py-4 sm:py-6">
+        <!-- Logo and Breadcrumb -->
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center">
+            <div class="h-8 w-8 sm:h-10 sm:w-10 bg-blue-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+              <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">ShopHub</h1>
           </div>
-          <h1 (click)="goToHome()" class="text-xl font-bold text-gray-900 cursor-pointer">ShopHub</h1>
+          
+          <!-- Breadcrumb -->
+          <nav class="hidden sm:flex items-center space-x-2 text-sm">
+            <a (click)="goToHome()" class="text-gray-500 hover:text-blue-600 cursor-pointer">Home</a>
+            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+            <span class="text-gray-900 font-medium">Products</span>
+            <span *ngIf="selectedCategory" class="flex items-center">
+              <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+              <span class="text-gray-900 font-medium">{{ getSelectedCategoryName() }}</span>
+            </span>
+          </nav>
         </div>
 
-        <!-- Search Bar -->
-        <div class="flex-1 max-w-2xl mx-8">
+        <!-- Search and Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <!-- Search -->
           <div class="relative">
             <input
               type="text"
               [(ngModel)]="searchQuery"
-              (keyup.enter)="onSearch()"
+              (keyup.enter)="searchProducts()"
               placeholder="Search products..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-48 sm:w-64 lg:w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
-            <button 
-              (click)="onSearch()"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-600 hover:text-blue-800"
-            >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </button>
           </div>
-        </div>
 
-        <!-- User Actions -->
-        <div class="flex items-center space-x-4">
           <!-- Cart -->
           <button (click)="viewCart()" class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
             </svg>
             <span *ngIf="cartItemCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ cartItemCount }}</span>
           </button>
 
-          <!-- User Menu -->
-          <div class="relative group" *ngIf="currentUser; else authButtons">
-            <button class="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors duration-200">
-              <div class="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <span class="text-white text-sm font-semibold">{{ getInitials() }}</span>
-              </div>
-              <span class="hidden md:block font-medium text-sm">{{ getFullName() }}</span>
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            
-            <!-- Dropdown Menu -->
-            <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div class="py-2">
-                <div class="px-4 py-2 border-b border-gray-100">
-                  <p class="text-sm font-medium text-gray-900">{{ getFullName() }}</p>
-                  <p class="text-xs text-gray-500">{{ currentUser.email || currentUser.username }}</p>
-                </div>
-                <button
-                  (click)="logout()"
-                  class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center"
-                >
-                  <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                  </svg>
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <ng-template #authButtons>
-            <div class="flex items-center space-x-2">
-              <button (click)="goToLogin()" class="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm font-medium">
-                Login
-              </button>
-              <button (click)="goToSignup()" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
-                Sign Up
-              </button>
-            </div>
-          </ng-template>
+          <!-- Mobile Menu Button -->
+          <button 
+            (click)="toggleMobileMenu()"
+            class="lg:hidden p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Products</h1>
-      <p class="text-gray-600">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Results Header -->
+    <div class="mb-6 sm:mb-8">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">Products</h2>
+      <p class="text-sm sm:text-base text-gray-600">
         {{ filteredProducts.length }} product{{ getProductCountText() }} found
         <span *ngIf="searchQuery">for "{{ searchQuery }}"</span>
         <span *ngIf="selectedCategory">in {{ getSelectedCategoryName() }}</span>
       </p>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex flex-col lg:flex-row gap-6 sm:gap-8">
+      <!-- Mobile Category Toggle -->
+      <div class="lg:hidden">
+        <button
+          (click)="toggleMobileCategories()"
+          class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+        >
+          <span class="font-medium text-gray-900">Categories</span>
+          <svg 
+            [class]="'h-5 w-5 text-gray-500 transition-transform duration-200 ' + (showMobileCategories ? 'rotate-180' : '')"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+      </div>
+
       <!-- Filters Sidebar -->
-      <div class="lg:w-64 flex-shrink-0">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div 
+        [class]="'lg:w-64 flex-shrink-0 ' + (showMobileCategories ? 'block' : 'hidden lg:block')"
+        class="lg:block"
+      >
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Categories</h3>
           
           <!-- All Categories -->
@@ -119,22 +113,78 @@
             <button
               (click)="onCategoryChange(null)"
               [ngClass]="getAllCategoriesClass()"
-              class="block w-full text-left py-2 transition-colors duration-200"
+              class="block w-full text-left py-2 px-3 rounded-lg transition-colors duration-200 font-medium"
             >
               All Categories
             </button>
           </div>
 
-          <!-- Category List -->
-          <div class="space-y-2">
-            <button
-              *ngFor="let category of categories"
-              (click)="onCategoryChange(category.id)"
-              [ngClass]="getCategoryClass(category.id)"
-              class="block w-full text-left py-2 transition-colors duration-200"
-            >
-              {{ category.name }}
-            </button>
+          <!-- Category Tree -->
+          <div class="space-y-1">
+            <div *ngFor="let category of categories" class="category-item">
+              <!-- Root Category -->
+              <button
+                (click)="onCategoryChange(category.id)"
+                [ngClass]="getCategoryClass(category.id)"
+                class="block w-full text-left py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-between hover:bg-gray-50"
+              >
+                <div class="flex items-center">
+                  <!-- Category Icon -->
+                  <div class="w-5 h-5 mr-3 flex items-center justify-center">
+                    <svg *ngIf="category.name.toLowerCase().includes('electronics')" class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <svg *ngIf="category.name.toLowerCase().includes('fashion')" class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <svg *ngIf="category.name.toLowerCase().includes('home') || category.name.toLowerCase().includes('garden')" class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <svg *ngIf="category.name.toLowerCase().includes('sports')" class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2"></path>
+                    </svg>
+                    <svg *ngIf="!category.name.toLowerCase().includes('electronics') && !category.name.toLowerCase().includes('fashion') && !category.name.toLowerCase().includes('home') && !category.name.toLowerCase().includes('garden') && !category.name.toLowerCase().includes('sports')" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                  </div>
+                  <span class="font-medium text-sm sm:text-base">{{ category.name }}</span>
+                </div>
+                <span *ngIf="category.children && category.children.length > 0" class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                  {{ category.children.length }}
+                </span>
+              </button>
+              
+              <!-- Subcategories -->
+              <div *ngIf="category.children && category.children.length > 0" class="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
+                <button
+                  *ngFor="let subcategory of category.children"
+                  (click)="onCategoryChange(subcategory.id)"
+                  [ngClass]="getCategoryClass(subcategory.id)"
+                  class="block w-full text-left py-1.5 px-3 rounded-lg transition-colors duration-200 text-sm flex items-center hover:bg-gray-50"
+                >
+                  <span class="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>
+                  {{ subcategory.name }}
+                  <span *ngIf="subcategory.children && subcategory.children.length > 0" class="text-xs text-gray-400 ml-auto">
+                    ({{ subcategory.children.length }})
+                  </span>
+                </button>
+                
+                <!-- Third level categories -->
+                <div *ngFor="let subcategory of category.children" class="ml-4 space-y-1">
+                  <div *ngIf="subcategory.children && subcategory.children.length > 0" class="border-l border-gray-200 pl-4">
+                    <button
+                      *ngFor="let subsubcategory of subcategory.children"
+                      (click)="onCategoryChange(subsubcategory.id)"
+                      [ngClass]="getCategoryClass(subsubcategory.id)"
+                      class="block w-full text-left py-1 px-3 rounded-lg transition-colors duration-200 text-xs flex items-center hover:bg-gray-50"
+                    >
+                      <span class="w-1.5 h-1.5 bg-gray-500 rounded-full mr-3"></span>
+                      {{ subsubcategory.name }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- No categories message -->
@@ -174,29 +224,32 @@
         </div>
 
         <!-- Products Grid -->
-        <div *ngIf="!loading && filteredProducts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div *ngIf="!loading && filteredProducts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           <div 
             *ngFor="let product of filteredProducts" 
-            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col h-full"
           >
             <!-- Product Image -->
-            <div class="h-48 bg-gray-200 flex items-center justify-center">
+            <div class="h-48 bg-gray-200 flex items-center justify-center flex-shrink-0">
               <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
             </div>
 
             <!-- Product Info -->
-            <div class="p-4">
-              <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ product.name }}</h3>
-              <p class="text-sm text-gray-600 mb-2">{{ product.categoryName }}</p>
+            <div class="p-4 flex flex-col flex-1">
+              <!-- Product Name and Category -->
+              <div class="flex-1 mb-3">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 min-h-[3.5rem]">{{ product.name }}</h3>
+                <p class="text-sm text-gray-600 line-clamp-1">{{ product.categoryName }}</p>
+              </div>
               
               <!-- Price and Stock -->
               <div class="flex items-center justify-between mb-3">
-                <span class="text-xl font-bold text-blue-600">₹{{ product.price }}</span>
+                <span class="text-xl font-bold text-blue-600">{{ formatPrice(product.price) }}</span>
                 <span 
                   [ngClass]="getProductStockClass(product)"
-                  class="text-sm font-medium"
+                  class="text-sm font-medium px-2 py-1 rounded-full"
                 >
                   {{ getProductStockText(product) }}
                 </span>
@@ -204,10 +257,13 @@
 
               <!-- Add to Cart Button -->
               <button 
-                (click)="addToCart(product)"
+                (click)="addToCart(product, $event)"
                 [disabled]="isProductDisabled(product)"
-                class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
+                <svg *ngIf="!isProductDisabled(product)" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+                </svg>
                 {{ getButtonText(product) }}
               </button>
             </div>

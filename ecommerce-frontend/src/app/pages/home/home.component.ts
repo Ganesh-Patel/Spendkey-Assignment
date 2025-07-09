@@ -1,37 +1,59 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ProductService, Product, Category } from '../../services/product.service';
 import { CartService, AddToCartRequest } from '../../services/cart.service';
+import { CartAnimationService } from '../../services/cart-animation.service';
 import { User } from '../../models/auth.model';
+import { Subscription } from 'rxjs';
+import { PriceUtil } from '../../utils/price.util';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   featuredProducts: Product[] = [];
   categories: Category[] = [];
   cartItemCount: number = 0;
   loading: boolean = true;
   searchQuery: string = '';
+  private cartSubscription: Subscription | null = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private productService: ProductService,
-    private cartService: CartService
+    private cartService: CartService,
+    private cartAnimationService: CartAnimationService
   ) {}
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
+    
+    // Subscribe to cart count changes
+    this.cartSubscription = this.cartService.cartItemCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
+    
     this.loadFeaturedProducts();
     this.loadCategories();
     if (this.currentUser) {
       this.loadCartItemCount();
     }
+  }
+
+  ngOnDestroy() {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
+  }
+
+  // Price formatting method
+  formatPrice(price: number): string {
+    return PriceUtil.formatPrice(price);
   }
 
   loadFeaturedProducts() {
@@ -63,7 +85,7 @@ export class HomeComponent implements OnInit {
     if (this.currentUser) {
       this.cartService.getCartItemCount(this.currentUser.id).subscribe({
         next: (count) => {
-          this.cartItemCount = count;
+          this.cartService.setCartItemCount(count);
         },
         error: (error) => {
           console.error('Error loading cart count:', error);
@@ -78,11 +100,19 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  addToCart(product: Product) {
+  addToCart(product: Product, event: MouseEvent) {
     if (!this.currentUser) {
       this.router.navigate(['/login']);
       return;
     }
+
+    // Trigger cart animation
+    this.cartAnimationService.triggerAddToCartAnimation(
+      event, 
+      product.id, 
+      product.name, 
+      product.price
+    );
 
     const request: AddToCartRequest = {
       userId: this.currentUser.id,
@@ -93,12 +123,10 @@ export class HomeComponent implements OnInit {
     this.cartService.addToCart(request).subscribe({
       next: (cartItem) => {
         console.log('Item added to cart:', cartItem);
-        this.loadCartItemCount(); // Refresh cart count
-        // You could add a toast notification here
+        // Cart count will be updated automatically via the observable
       },
       error: (error) => {
         console.error('Error adding to cart:', error);
-        // You could add error handling here
       }
     });
   }
@@ -152,5 +180,26 @@ export class HomeComponent implements OnInit {
 
   goToCategory(categoryId: number) {
     this.router.navigate(['/products'], { queryParams: { category: categoryId } });
+  }
+
+  goToOrders() {
+    this.router.navigate(['/orders']);
+  }
+
+  // Get category-specific colors
+  getCategoryColors(categoryName: string): { bg: string, icon: string } {
+    const name = categoryName.toLowerCase();
+    
+    if (name.includes('electronics')) {
+      return { bg: 'from-blue-500 to-blue-600', icon: 'from-blue-50 to-blue-100' };
+    } else if (name.includes('fashion')) {
+      return { bg: 'from-pink-500 to-pink-600', icon: 'from-pink-50 to-pink-100' };
+    } else if (name.includes('home') || name.includes('garden')) {
+      return { bg: 'from-green-500 to-green-600', icon: 'from-green-50 to-green-100' };
+    } else if (name.includes('sports')) {
+      return { bg: 'from-orange-500 to-orange-600', icon: 'from-orange-50 to-orange-100' };
+    } else {
+      return { bg: 'from-purple-500 to-purple-600', icon: 'from-purple-50 to-purple-100' };
+    }
   }
 }

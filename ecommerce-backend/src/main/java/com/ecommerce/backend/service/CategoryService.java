@@ -28,6 +28,16 @@ public class CategoryService {
     }
     
     /**
+     * Get root categories only (categories with no parent)
+     */
+    public List<CategoryDto> getRootCategories() {
+        List<Category> rootCategories = categoryRepository.findByParentIsNull();
+        return rootCategories.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    
+    /**
      * Get category by ID
      */
     public Optional<CategoryDto> getCategoryById(Long id) {

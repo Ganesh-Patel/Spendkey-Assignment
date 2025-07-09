@@ -97,7 +97,7 @@ public class ProductService {
         
         Product product = new Product(
                 productDto.getName(),
-                productDto.getPrice(),
+                BigDecimal.valueOf(productDto.getPrice()),
                 productDto.getAvailabilityQty(),
                 category
         );
@@ -114,7 +114,7 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         
         product.setName(productDto.getName());
-        product.setPrice(productDto.getPrice());
+        product.setPrice(BigDecimal.valueOf(productDto.getPrice()));
         product.setAvailabilityQty(productDto.getAvailabilityQty());
         
         if (!productDto.getCategoryId().equals(product.getCategory().getId())) {
@@ -169,7 +169,7 @@ public class ProductService {
         ProductDto dto = new ProductDto();
         dto.setId(product.getId());
         dto.setName(product.getName());
-        dto.setPrice(product.getPrice());
+        dto.setPrice(product.getPrice().doubleValue());
         dto.setAvailabilityQty(product.getAvailabilityQty());
         dto.setCategoryId(product.getCategory().getId());
         dto.setCategoryName(product.getCategory().getName());

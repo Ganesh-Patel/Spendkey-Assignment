@@ -1,12 +1,13 @@
 package com.ecommerce.backend.dto;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 public class CartResponse {
     private Long userId;
     private List<CartItemDto> items;
-    private BigDecimal totalPrice;
+    private Double totalPrice;
     private Integer totalItems;
     
     // Constructors
@@ -15,7 +16,7 @@ public class CartResponse {
     public CartResponse(Long userId, List<CartItemDto> items, BigDecimal totalPrice, Integer totalItems) {
         this.userId = userId;
         this.items = items;
-        this.totalPrice = totalPrice;
+        this.totalPrice = totalPrice.setScale(2, RoundingMode.HALF_UP).doubleValue();
         this.totalItems = totalItems;
     }
     
@@ -36,11 +37,11 @@ public class CartResponse {
         this.items = items;
     }
     
-    public BigDecimal getTotalPrice() {
+    public Double getTotalPrice() {
         return totalPrice;
     }
     
-    public void setTotalPrice(BigDecimal totalPrice) {
+    public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
     }
     

@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin(origins = "http://localhost:4200")
 public class ProductController {
     
     @Autowired
@@ -32,6 +31,15 @@ public class ProductController {
     @GetMapping(params = "categoryId")
     public ResponseEntity<List<ProductDto>> getProductsByCategory(@RequestParam Long categoryId) {
         List<ProductDto> products = productService.getProductsByCategory(categoryId);
+        return ResponseEntity.ok(products);
+    }
+    
+    /**
+     * GET /products/category/{id} - Get products by category (alternative endpoint)
+     */
+    @GetMapping("/category/{id}")
+    public ResponseEntity<List<ProductDto>> getProductsByCategoryPath(@PathVariable Long id) {
+        List<ProductDto> products = productService.getProductsByCategory(id);
         return ResponseEntity.ok(products);
     }
     

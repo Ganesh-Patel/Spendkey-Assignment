@@ -1,22 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ProductService, Product } from '../../services/product.service';
 import { CartService, AddToCartRequest } from '../../services/cart.service';
 import { User } from '../../models/auth.model';
+import { Subscription } from 'rxjs';
+import { PriceUtil } from '../../utils/price.util';
 
 @Component({
   selector: 'app-product-detail',
   templateUrl: './product-detail.component.html',
   styleUrls: ['./product-detail.component.css']
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   product: Product | null = null;
   relatedProducts: Product[] = [];
   loading: boolean = true;
   relatedLoading: boolean = true;
   quantity: number = 1;
+  cartItemCount: number = 0;
+  private cartSubscription: Subscription | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,6 +33,11 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
     
+    // Subscribe to cart count changes
+    this.cartSubscription = this.cartService.cartItemCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
+    
     this.route.params.subscribe(params => {
       const productId = Number(params['id']);
       if (productId) {
@@ -36,6 +45,34 @@ export class ProductDetailComponent implements OnInit {
         this.loadRelatedProducts(productId);
       }
     });
+
+    if (this.currentUser) {
+      this.loadCartItemCount();
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
+  }
+
+  // Price formatting method
+  formatPrice(price: number): string {
+    return PriceUtil.formatPrice(price);
+  }
+
+  loadCartItemCount() {
+    if (this.currentUser) {
+      this.cartService.getCartItemCount(this.currentUser.id).subscribe({
+        next: (count) => {
+          this.cartService.setCartItemCount(count);
+        },
+        error: (error) => {
+          console.error('Error loading cart count:', error);
+        }
+      });
+    }
   }
 
   loadProduct(productId: number) {
@@ -83,7 +120,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(request).subscribe({
       next: (cartItem) => {
         console.log('Item added to cart:', cartItem);
-        // You could add a toast notification here
+        // Cart count will be updated automatically via the observable
       },
       error: (error) => {
         console.error('Error adding to cart:', error);
@@ -106,6 +143,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(request).subscribe({
       next: (cartItem) => {
         console.log('Related item added to cart:', cartItem);
+        // Cart count will be updated automatically via the observable
       },
       error: (error) => {
         console.error('Error adding related item to cart:', error);

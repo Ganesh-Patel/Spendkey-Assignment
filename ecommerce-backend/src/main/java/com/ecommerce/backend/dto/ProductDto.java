@@ -1,11 +1,12 @@
 package com.ecommerce.backend.dto;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class ProductDto {
     private Long id;
     private String name;
-    private BigDecimal price;
+    private Double price;
     private Integer availabilityQty;
     private Long categoryId;
     private String categoryName;
@@ -16,7 +17,7 @@ public class ProductDto {
     public ProductDto(Long id, String name, BigDecimal price, Integer availabilityQty, Long categoryId, String categoryName) {
         this.id = id;
         this.name = name;
-        this.price = price;
+        this.price = price.setScale(2, RoundingMode.HALF_UP).doubleValue();
         this.availabilityQty = availabilityQty;
         this.categoryId = categoryId;
         this.categoryName = categoryName;
@@ -39,11 +40,11 @@ public class ProductDto {
         this.name = name;
     }
     
-    public BigDecimal getPrice() {
+    public Double getPrice() {
         return price;
     }
     
-    public void setPrice(BigDecimal price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
     

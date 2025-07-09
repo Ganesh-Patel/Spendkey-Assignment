@@ -1,6 +1,7 @@
 package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.dto.AddToCartRequest;
+import com.ecommerce.backend.dto.CartItemResponseDto;
 import com.ecommerce.backend.dto.CartResponse;
 import com.ecommerce.backend.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,10 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = "http://localhost:4200")
 public class CartController {
     
     @Autowired
@@ -21,33 +22,64 @@ public class CartController {
      * POST /cart/add - Add product to cart
      */
     @PostMapping("/add")
-    public ResponseEntity<Void> addToCart(@Valid @RequestBody AddToCartRequest request) {
+    public ResponseEntity<CartItemResponseDto> addToCart(@Valid @RequestBody AddToCartRequest request) {
         try {
-            cartService.addToCart(request);
-            return ResponseEntity.ok().build();
+            CartItemResponseDto cartItem = cartService.addToCartAndReturnItem(request);
+            return ResponseEntity.ok(cartItem);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
     }
     
     /**
-     * GET /cart - Get cart for user
+     * GET /cart/{userId} - Get cart for user
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<CartItemResponseDto>> getCart(@PathVariable Long userId) {
+        List<CartItemResponseDto> cartItems = cartService.getCartItemsForUser(userId);
+        return ResponseEntity.ok(cartItems);
+    }
+    
+    /**
+     * GET /cart - Get cart for user (alternative endpoint)
      */
     @GetMapping
-    public ResponseEntity<CartResponse> getCart(@RequestParam Long userId) {
+    public ResponseEntity<CartResponse> getCartByParam(@RequestParam Long userId) {
         CartResponse cart = cartService.getCart(userId);
         return ResponseEntity.ok(cart);
     }
     
     /**
-     * PUT /cart/{cartItemId}/quantity - Update cart item quantity
+     * PUT /cart/{cartItemId} - Update cart item quantity
      */
-    @PutMapping("/{cartItemId}/quantity")
-    public ResponseEntity<Void> updateCartItemQuantity(
+    @PutMapping("/{cartItemId}")
+    public ResponseEntity<CartItemResponseDto> updateCartItemQuantity(
             @PathVariable Long cartItemId,
-            @RequestParam Integer quantity) {
+            @RequestBody UpdateQuantityRequest request) {
         try {
-            cartService.updateCartItemQuantity(cartItemId, quantity);
+            CartItemResponseDto updatedItem = cartService.updateCartItemQuantityAndReturn(cartItemId, request.getQuantity());
+            return ResponseEntity.ok(updatedItem);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * DELETE /cart/{userId}/product/{productId} - Remove item from cart
+     */
+    @DeleteMapping("/{userId}/product/{productId}")
+    public ResponseEntity<Void> removeFromCart(@PathVariable Long userId, @PathVariable Long productId) {
+        try {
+            // Find the cart item by userId and productId, then remove it
+            List<CartItemResponseDto> cartItems = cartService.getCartItemsForUser(userId);
+            CartItemResponseDto itemToRemove = cartItems.stream()
+                    .filter(item -> item.getProductId().equals(productId))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (itemToRemove != null) {
+                cartService.removeFromCart(itemToRemove.getId());
+            }
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
@@ -55,10 +87,10 @@ public class CartController {
     }
     
     /**
-     * DELETE /cart/{cartItemId} - Remove item from cart
+     * DELETE /cart/{cartItemId} - Remove item from cart (alternative endpoint)
      */
     @DeleteMapping("/{cartItemId}")
-    public ResponseEntity<Void> removeFromCart(@PathVariable Long cartItemId) {
+    public ResponseEntity<Void> removeFromCartById(@PathVariable Long cartItemId) {
         try {
             cartService.removeFromCart(cartItemId);
             return ResponseEntity.ok().build();
@@ -77,22 +109,53 @@ public class CartController {
     }
     
     /**
-     * GET /cart/count - Get cart item count for user
+     * GET /cart/{userId}/count - Get cart item count for user
      */
-    @GetMapping("/count")
-    public ResponseEntity<Long> getCartItemCount(@RequestParam Long userId) {
+    @GetMapping("/{userId}/count")
+    public ResponseEntity<Long> getCartItemCount(@PathVariable Long userId) {
         Long count = cartService.getCartItemCount(userId);
         return ResponseEntity.ok(count);
     }
     
     /**
-     * GET /cart/check - Check if item is in cart
+     * GET /cart/count - Get cart item count for user (alternative endpoint)
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Long> getCartItemCountByParam(@RequestParam Long userId) {
+        Long count = cartService.getCartItemCount(userId);
+        return ResponseEntity.ok(count);
+    }
+    
+    /**
+     * GET /cart/{userId}/check/{productId} - Check if item is in cart
+     */
+    @GetMapping("/{userId}/check/{productId}")
+    public ResponseEntity<Boolean> isItemInCart(@PathVariable Long userId, @PathVariable Long productId) {
+        boolean isInCart = cartService.isItemInCart(userId, productId);
+        return ResponseEntity.ok(isInCart);
+    }
+    
+    /**
+     * GET /cart/check - Check if item is in cart (alternative endpoint)
      */
     @GetMapping("/check")
-    public ResponseEntity<Boolean> isItemInCart(
+    public ResponseEntity<Boolean> isItemInCartByParam(
             @RequestParam Long userId,
             @RequestParam Long productId) {
         boolean isInCart = cartService.isItemInCart(userId, productId);
         return ResponseEntity.ok(isInCart);
+    }
+    
+    // DTO for update quantity request
+    public static class UpdateQuantityRequest {
+        private Integer quantity;
+        
+        public Integer getQuantity() {
+            return quantity;
+        }
+        
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
     }
 } 

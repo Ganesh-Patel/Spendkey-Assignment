@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-@CrossOrigin(origins = "http://localhost:4200")
 public class CategoryController {
     
     @Autowired
@@ -23,6 +22,15 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDto>> getCategoryTree() {
         List<CategoryDto> categories = categoryService.getCategoryTree();
         return ResponseEntity.ok(categories);
+    }
+    
+    /**
+     * GET /categories/root - Get root categories only (categories with no parent)
+     */
+    @GetMapping("/root")
+    public ResponseEntity<List<CategoryDto>> getRootCategories() {
+        List<CategoryDto> rootCategories = categoryService.getRootCategories();
+        return ResponseEntity.ok(rootCategories);
     }
     
     /**

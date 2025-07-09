@@ -2,6 +2,7 @@ package com.ecommerce.backend.service;
 
 import com.ecommerce.backend.dto.AddToCartRequest;
 import com.ecommerce.backend.dto.CartItemDto;
+import com.ecommerce.backend.dto.CartItemResponseDto;
 import com.ecommerce.backend.dto.CartResponse;
 import com.ecommerce.backend.entity.CartItem;
 import com.ecommerce.backend.entity.Product;
@@ -74,7 +75,7 @@ public class CartService {
                 .collect(Collectors.toList());
         
         BigDecimal totalPrice = itemDtos.stream()
-                .map(CartItemDto::getTotalPrice)
+                .map(item -> BigDecimal.valueOf(item.getTotalPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         Integer totalItems = itemDtos.stream()
@@ -82,6 +83,42 @@ public class CartService {
                 .sum();
         
         return new CartResponse(userId, itemDtos, totalPrice, totalItems);
+    }
+    
+    /**
+     * Get cart items for user with detailed product information (for frontend)
+     */
+    public List<CartItemResponseDto> getCartItemsForUser(Long userId) {
+        List<CartItem> cartItems = cartRepository.findByUserIdWithProduct(userId);
+        return cartItems.stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get specific cart item by ID with detailed product information
+     */
+    public CartItemResponseDto getCartItemById(Long cartItemId) {
+        CartItem cartItem = cartRepository.findByIdWithProduct(cartItemId)
+                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+        return convertToResponseDto(cartItem);
+    }
+    
+    /**
+     * Add product to cart and return the added item
+     */
+    public CartItemResponseDto addToCartAndReturnItem(AddToCartRequest request) {
+        addToCart(request);
+        
+        // Find the cart item that was just added/updated
+        Optional<CartItem> cartItem = cartRepository.findByUserIdAndProductId(
+                request.getUserId(), request.getProductId());
+        
+        if (cartItem.isPresent()) {
+            return convertToResponseDto(cartItem.get());
+        }
+        
+        throw new RuntimeException("Failed to add item to cart");
     }
     
     /**
@@ -103,6 +140,14 @@ public class CartService {
         
         cartItem.setQuantity(newQuantity);
         cartRepository.save(cartItem);
+    }
+    
+    /**
+     * Update cart item quantity and return the updated item
+     */
+    public CartItemResponseDto updateCartItemQuantityAndReturn(Long cartItemId, Integer newQuantity) {
+        updateCartItemQuantity(cartItemId, newQuantity);
+        return getCartItemById(cartItemId);
     }
     
     /**
@@ -146,6 +191,30 @@ public class CartService {
                 cartItem.getProduct().getPrice(),
                 cartItem.getQuantity(),
                 cartItem.getTotalPrice()
+        );
+    }
+    
+    /**
+     * Convert CartItem entity to CartItemResponseDto (for frontend)
+     */
+    private CartItemResponseDto convertToResponseDto(CartItem cartItem) {
+        Product product = cartItem.getProduct();
+        CartItemResponseDto.ProductDto productDto = new CartItemResponseDto.ProductDto(
+                product.getId(),
+                product.getName(),
+                product.getPrice(),
+                product.getAvailabilityQty(),
+                product.getCategory().getId(),
+                product.getCategory().getName(),
+                product.isAvailable()
+        );
+        
+        return new CartItemResponseDto(
+                cartItem.getId(),
+                cartItem.getUserId(),
+                product.getId(),
+                cartItem.getQuantity(),
+                productDto
         );
     }
 } 

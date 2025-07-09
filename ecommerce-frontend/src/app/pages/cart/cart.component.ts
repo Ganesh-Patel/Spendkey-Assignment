@@ -1,40 +1,64 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { CartService, CartItem, UpdateCartItemRequest } from '../../services/cart.service';
+import { CartService, CartItem } from '../../services/cart.service';
+import { OrderService, CreateOrderRequest, Order } from '../../services/order.service';
 import { User } from '../../models/auth.model';
+import { Subscription } from 'rxjs';
+import { PriceUtil } from '../../utils/price.util';
 
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.component.html',
   styleUrls: ['./cart.component.css']
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   cartItems: CartItem[] = [];
   loading: boolean = true;
   updating: boolean = false;
+  checkingOut: boolean = false;
+  showCheckoutForm: boolean = false;
+  checkoutForm = {
+    customerName: '',
+    customerEmail: '',
+    customerAddress: ''
+  };
+  private cartSubscription: Subscription | null = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
-    private cartService: CartService
+    private cartService: CartService,
+    private orderService: OrderService
   ) {}
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
+    
     if (!this.currentUser) {
       this.router.navigate(['/login']);
       return;
     }
+
+    // Pre-fill checkout form with user data
+    this.checkoutForm.customerName = this.getFullName();
+    this.checkoutForm.customerEmail = this.currentUser.email || '';
+
     this.loadCart();
+  }
+
+  ngOnDestroy() {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
   }
 
   loadCart() {
     this.loading = true;
     this.cartService.getCart(this.currentUser!.id).subscribe({
-      next: (items) => {
-        this.cartItems = items;
+      next: (cartItems) => {
+        this.cartItems = cartItems;
         this.loading = false;
       },
       error: (error) => {
@@ -44,72 +68,176 @@ export class CartComponent implements OnInit {
     });
   }
 
-  updateQuantity(item: CartItem, newQuantity: number) {
-    if (newQuantity < 1) return;
+  increaseQuantity(item: CartItem) {
+    if (this.updating || item.quantity >= item.product.availabilityQty) return;
     
     this.updating = true;
-    const request: UpdateCartItemRequest = { quantity: newQuantity };
-    
-    this.cartService.updateCartItem(item.id, request).subscribe({
+    this.cartService.updateCartItem(item.id, { quantity: item.quantity + 1 }).subscribe({
       next: (updatedItem) => {
-        // Update the item in the local array
-        const index = this.cartItems.findIndex(i => i.id === item.id);
-        if (index !== -1) {
-          this.cartItems[index] = updatedItem;
-        }
+        item.quantity = updatedItem.quantity;
         this.updating = false;
       },
       error: (error) => {
-        console.error('Error updating cart item:', error);
+        console.error('Error updating quantity:', error);
+        this.updating = false;
+      }
+    });
+  }
+
+  decreaseQuantity(item: CartItem) {
+    if (this.updating || item.quantity <= 1) return;
+    
+    this.updating = true;
+    this.cartService.updateCartItem(item.id, { quantity: item.quantity - 1 }).subscribe({
+      next: (updatedItem) => {
+        item.quantity = updatedItem.quantity;
+        this.updating = false;
+      },
+      error: (error) => {
+        console.error('Error updating quantity:', error);
         this.updating = false;
       }
     });
   }
 
   removeItem(item: CartItem) {
-    if (!this.currentUser) return;
+    if (this.updating) return;
     
-    this.cartService.removeFromCart(this.currentUser.id, item.productId).subscribe({
+    this.updating = true;
+    this.cartService.removeFromCart(this.currentUser!.id, item.product.id).subscribe({
       next: () => {
-        // Remove item from local array
-        this.cartItems = this.cartItems.filter(i => i.id !== item.id);
+        this.cartItems = this.cartItems.filter(cartItem => cartItem.product.id !== item.product.id);
+        this.updating = false;
       },
       error: (error) => {
-        console.error('Error removing item from cart:', error);
+        console.error('Error removing item:', error);
+        this.updating = false;
       }
     });
   }
 
   clearCart() {
-    if (!this.currentUser) return;
+    if (this.updating || this.cartItems.length === 0) return;
     
-    if (confirm('Are you sure you want to clear your cart?')) {
-      this.cartService.clearCart(this.currentUser.id).subscribe({
-        next: () => {
-          this.cartItems = [];
-        },
-        error: (error) => {
-          console.error('Error clearing cart:', error);
-        }
-      });
-    }
+    this.updating = true;
+    this.cartService.clearCart(this.currentUser!.id).subscribe({
+      next: () => {
+        this.cartItems = [];
+        this.updating = false;
+      },
+      error: (error) => {
+        console.error('Error clearing cart:', error);
+        this.updating = false;
+      }
+    });
   }
 
-  getTotalPrice(): number {
-    return this.cartItems.reduce((total, item) => {
-      return total + (item.product.price * item.quantity);
-    }, 0);
+  showCheckout() {
+    if (this.cartItems.length === 0) return;
+    this.showCheckoutForm = true;
   }
 
-  getTotalItems(): number {
-    return this.cartItems.reduce((total, item) => {
-      return total + item.quantity;
-    }, 0);
+  cancelCheckout() {
+    this.showCheckoutForm = false;
+    this.checkoutForm = {
+      customerName: this.getFullName(),
+      customerEmail: this.currentUser?.email || '',
+      customerAddress: ''
+    };
   }
 
   checkout() {
-    // This would typically navigate to a checkout page
-    alert('Checkout functionality would be implemented here');
+    if (this.checkingOut || this.cartItems.length === 0) return;
+    
+    // Validate form
+    if (!this.checkoutForm.customerName || !this.checkoutForm.customerEmail || !this.checkoutForm.customerAddress) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    this.checkingOut = true;
+    
+    const request: CreateOrderRequest = {
+      userId: this.currentUser!.id,
+      customerName: this.checkoutForm.customerName,
+      customerEmail: this.checkoutForm.customerEmail,
+      customerAddress: this.checkoutForm.customerAddress
+    };
+
+    this.orderService.createOrder(request).subscribe({
+      next: (order: Order) => {
+        console.log('Order created successfully:', order);
+        
+        // Show success message
+        this.showOrderSuccess(order);
+        
+        // Clear cart items from UI
+        this.cartItems = [];
+        this.checkingOut = false;
+        this.showCheckoutForm = false;
+        
+        // Reset form
+        this.checkoutForm = {
+          customerName: this.getFullName(),
+          customerEmail: this.currentUser?.email || '',
+          customerAddress: ''
+        };
+      },
+      error: (error) => {
+        console.error('Error creating order:', error);
+        alert('Error creating order. Please try again.');
+        this.checkingOut = false;
+      }
+    });
+  }
+
+  showOrderSuccess(order: Order) {
+    // Create a success notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-500 ease-out';
+    notification.innerHTML = `
+      <div class="flex items-center space-x-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>Order #${order.id} placed successfully!</span>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+      notification.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 500);
+    }, 5000);
+  }
+
+  getTotalItems(): number {
+    return this.cartItems.reduce((total, item) => total + item.quantity, 0);
+  }
+
+  getTotalPrice(): number {
+    return this.cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  }
+
+  getFormattedTotalPrice(): string {
+    return PriceUtil.formatPrice(this.getTotalPrice());
+  }
+
+  formatPrice(price: number): string {
+    return PriceUtil.formatPrice(price);
+  }
+
+  formatTotalPrice(price: number, quantity: number): string {
+    return PriceUtil.formatPrice(price * quantity);
   }
 
   continueShopping() {
@@ -117,30 +245,31 @@ export class CartComponent implements OnInit {
   }
 
   getFullName(): string {
-    if (!this.currentUser) return 'User';
-    const firstName = this.currentUser.firstName || '';
-    const lastName = this.currentUser.lastName || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-    return fullName || this.currentUser.username || 'User';
+    if (!this.currentUser) return '';
+    return `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim() || this.currentUser.username;
   }
 
   getInitials(): string {
-    if (!this.currentUser) return 'U';
+    if (!this.currentUser) return '';
     const firstName = this.currentUser.firstName || '';
     const lastName = this.currentUser.lastName || '';
+    const username = this.currentUser.username || '';
+    
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     } else if (firstName) {
       return firstName.charAt(0).toUpperCase();
-    } else if (this.currentUser.username) {
-      return this.currentUser.username.charAt(0).toUpperCase();
+    } else if (lastName) {
+      return lastName.charAt(0).toUpperCase();
+    } else if (username) {
+      return username.charAt(0).toUpperCase();
     }
     return 'U';
   }
 
   logout() {
     this.authService.logout();
-    this.router.navigate(['/login']);
+    this.router.navigate(['/']);
   }
 
   goToLogin() {

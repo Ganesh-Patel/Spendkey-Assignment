@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 export interface CartItem {
   id: number;
@@ -33,6 +34,8 @@ export interface UpdateCartItemRequest {
 })
 export class CartService {
   private apiUrl = 'http://localhost:8080/api';
+  private cartItemCountSubject = new BehaviorSubject<number>(0);
+  public cartItemCount$ = this.cartItemCountSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
@@ -43,22 +46,30 @@ export class CartService {
 
   // Add item to cart
   addToCart(request: AddToCartRequest): Observable<CartItem> {
-    return this.http.post<CartItem>(`${this.apiUrl}/cart/add`, request);
+    return this.http.post<CartItem>(`${this.apiUrl}/cart/add`, request).pipe(
+      tap(() => this.refreshCartCount(request.userId))
+    );
   }
 
   // Update cart item quantity
   updateCartItem(cartItemId: number, request: UpdateCartItemRequest): Observable<CartItem> {
-    return this.http.put<CartItem>(`${this.apiUrl}/cart/${cartItemId}`, request);
+    return this.http.put<CartItem>(`${this.apiUrl}/cart/${cartItemId}`, request).pipe(
+      tap(() => this.refreshCartCount())
+    );
   }
 
   // Remove item from cart
   removeFromCart(userId: number, productId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/cart/${userId}/product/${productId}`);
+    return this.http.delete<void>(`${this.apiUrl}/cart/${userId}/product/${productId}`).pipe(
+      tap(() => this.refreshCartCount(userId))
+    );
   }
 
   // Clear user's cart
   clearCart(userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/cart/${userId}`);
+    return this.http.delete<void>(`${this.apiUrl}/cart/${userId}`).pipe(
+      tap(() => this.refreshCartCount(userId))
+    );
   }
 
   // Check if item exists in cart
@@ -68,6 +79,25 @@ export class CartService {
 
   // Get cart item count
   getCartItemCount(userId: number): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/cart/${userId}/count`);
+    return this.http.get<number>(`${this.apiUrl}/cart/${userId}/count`).pipe(
+      tap(count => this.cartItemCountSubject.next(count))
+    );
+  }
+
+  // Refresh cart count
+  refreshCartCount(userId?: number): void {
+    // This will be called by components that have access to userId
+    // For now, we'll just emit 0 to indicate a refresh is needed
+    this.cartItemCountSubject.next(0);
+  }
+
+  // Set cart count directly (used when we know the count)
+  setCartItemCount(count: number): void {
+    this.cartItemCountSubject.next(count);
+  }
+
+  // Get current cart count
+  getCurrentCartCount(): number {
+    return this.cartItemCountSubject.value;
   }
 } 
