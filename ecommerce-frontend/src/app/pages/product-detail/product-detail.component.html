@@ -10,13 +10,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
             </svg>
           </div>
-          <h1 (click)="router.navigate(['/home'])" class="text-xl font-bold text-gray-900 cursor-pointer">ShopHub</h1>
+          <h1 (click)="navigateToHome()" class="text-xl font-bold text-gray-900 cursor-pointer">ShopHub</h1>
         </div>
 
         <!-- User Actions -->
         <div class="flex items-center space-x-4">
           <!-- Cart -->
-          <button (click)="router.navigate(['/cart'])" class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200">
+          <button (click)="navigateToCart()" class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
             </svg>
@@ -27,7 +27,7 @@
           <div class="relative group" *ngIf="currentUser; else authButtons">
             <button class="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors duration-200">
               <div class="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <span class="text-white text-sm font-semibold">{{ currentUser.firstName?.charAt(0) || currentUser.username?.charAt(0) || 'U' }}</span>
+                <span class="text-white text-sm font-semibold">{{ getInitials() }}</span>
               </div>
               <span class="hidden md:block font-medium text-sm">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
             </button>
@@ -40,7 +40,7 @@
                   <p class="text-xs text-gray-500">{{ currentUser.email || currentUser.username }}</p>
                 </div>
                 <button
-                  (click)="authService.logout(); router.navigate(['/login'])"
+                  (click)="logout()"
                   class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center"
                 >
                   <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,10 +54,10 @@
 
           <ng-template #authButtons>
             <div class="flex items-center space-x-2">
-              <button (click)="router.navigate(['/login'])" class="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm font-medium">
+              <button (click)="navigateToLogin()" class="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm font-medium">
                 Login
               </button>
-              <button (click)="router.navigate(['/signup'])" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
+              <button (click)="navigateToSignup()" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
                 Sign Up
               </button>
             </div>
@@ -146,7 +146,7 @@
 
         <!-- Back to Products -->
         <button 
-          (click)="router.navigate(['/products'])"
+          (click)="navigateToProducts()"
           class="w-full mt-4 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200"
         >
           Back to Products
@@ -198,34 +198,20 @@
             <button 
               (click)="addRelatedToCart(relatedProduct); $event.stopPropagation()"
               [disabled]="!isProductAvailable(relatedProduct)"
-              class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
+              <svg *ngIf="isProductAvailable(relatedProduct)" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+              </svg>
               {{ isProductAvailable(relatedProduct) ? 'Add to Cart' : 'Out of Stock' }}
             </button>
           </div>
         </div>
-
-        <!-- No Related Products -->
-        <div *ngIf="relatedProducts.length === 0" class="col-span-full text-center py-8">
-          <p class="text-gray-500">No related products found.</p>
-        </div>
       </div>
-    </div>
 
-    <!-- Product Not Found -->
-    <div *ngIf="!loading && !product" class="text-center py-12">
-      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33"></path>
-      </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">Product not found</h3>
-      <p class="mt-1 text-sm text-gray-500">The product you're looking for doesn't exist.</p>
-      <div class="mt-6">
-        <button
-          (click)="router.navigate(['/products'])"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-        >
-          Browse Products
-        </button>
+      <!-- No Related Products -->
+      <div *ngIf="!relatedLoading && relatedProducts.length === 0" class="text-center py-8">
+        <p class="text-gray-500">No related products found.</p>
       </div>
     </div>
   </div>

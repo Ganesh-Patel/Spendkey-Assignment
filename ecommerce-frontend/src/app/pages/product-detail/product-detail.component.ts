@@ -24,8 +24,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
-    private authService: AuthService,
+    public router: Router,
+    public authService: AuthService,
     private productService: ProductService,
     private cartService: CartService
   ) {}
@@ -55,6 +55,32 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
     }
+  }
+
+  // Navigation methods
+  navigateToHome() {
+    this.router.navigate(['/home']);
+  }
+
+  navigateToCart() {
+    this.router.navigate(['/cart']);
+  }
+
+  navigateToLogin() {
+    this.router.navigate(['/login']);
+  }
+
+  navigateToSignup() {
+    this.router.navigate(['/signup']);
+  }
+
+  navigateToProducts() {
+    this.router.navigate(['/products']);
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   // Price formatting method
@@ -177,5 +203,19 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   getProductStockClass(product: Product): string {
     return product.available && product.availabilityQty > 0 ? 'text-green-600' : 'text-red-600';
+  }
+
+  getInitials(): string {
+    if (!this.currentUser) return 'U';
+    const firstName = this.currentUser.firstName || '';
+    const lastName = this.currentUser.lastName || '';
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    } else if (firstName) {
+      return firstName.charAt(0).toUpperCase();
+    } else if (this.currentUser.username) {
+      return this.currentUser.username.charAt(0).toUpperCase();
+    }
+    return 'U';
   }
 } 
