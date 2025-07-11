@@ -20,9 +20,36 @@ export class AuthService {
     const savedUser = localStorage.getItem('currentUser');
     const savedToken = localStorage.getItem('authToken');
     if (savedUser && savedToken) {
-      const user = JSON.parse(savedUser);
-      this.currentUserSubject.next(user);
-      this.isAuthenticatedSubject.next(true);
+      // Validate the saved token
+      this.validateToken(savedToken).subscribe({
+        next: (response) => {
+          if (response.message === 'Authentication successful') {
+            const user: User = {
+              id: response.userId,
+              username: response.username,
+              email: response.email,
+              firstName: response.firstName,
+              lastName: response.lastName,
+              mobileNumber: response.mobileNumber || '',
+              role: response.role || 'USER',
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            this.currentUserSubject.next(user);
+            this.isAuthenticatedSubject.next(true);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            localStorage.setItem('authToken', response.token || '');
+          } else {
+            // Token is invalid, clear storage
+            this.logout();
+          }
+        },
+        error: () => {
+          // Token validation failed, clear storage
+          this.logout();
+        }
+      });
     }
   }
 
@@ -41,8 +68,8 @@ export class AuthService {
               mobileNumber: response.mobileNumber || '',
               role: response.role || 'USER',
               isActive: true,
-              createdAt: response.loginTime,
-              updatedAt: response.loginTime
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             };
             
             this.currentUserSubject.next(user);
@@ -62,9 +89,25 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.apiUrl}/signup`, signupRequest)
       .pipe(
         tap(response => {
-          if (response.message === 'User registered successfully') {
-            // For signup, we don't automatically log in the user
-            // They need to login separately
+          if (response.message === 'Authentication successful') {
+            // For signup, automatically log in the user with the returned token
+            const user: User = {
+              id: response.userId,
+              username: response.username,
+              email: response.email,
+              firstName: response.firstName,
+              lastName: response.lastName,
+              mobileNumber: response.mobileNumber || '',
+              role: response.role || 'USER',
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            this.currentUserSubject.next(user);
+            this.isAuthenticatedSubject.next(true);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            localStorage.setItem('authToken', response.token || '');
           }
         }),
         catchError(error => {
@@ -93,6 +136,12 @@ export class AuthService {
     return localStorage.getItem('authToken');
   }
 
+  validateToken(token: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/validate-token`, null, {
+      params: { token }
+    });
+  }
+
   checkUsernameAvailability(username: string): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/check-username/${username}`);
   }
@@ -102,10 +151,39 @@ export class AuthService {
   }
 
   updateProfile(userId: number, profileData: SignupRequest): Observable<AuthResponse> {
-    return this.http.put<AuthResponse>(`${this.apiUrl}/profile/${userId}`, profileData);
+    return this.http.put<AuthResponse>(`${this.apiUrl}/profile/${userId}`, profileData)
+      .pipe(
+        tap(response => {
+          if (response.message === 'Authentication successful') {
+            // Update the stored user data and token
+            const user: User = {
+              id: response.userId,
+              username: response.username,
+              email: response.email,
+              firstName: response.firstName,
+              lastName: response.lastName,
+              mobileNumber: response.mobileNumber || '',
+              role: response.role || 'USER',
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            this.currentUserSubject.next(user);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            localStorage.setItem('authToken', response.token || '');
+          }
+        })
+      );
   }
 
   deactivateAccount(userId: number): Observable<AuthResponse> {
-    return this.http.delete<AuthResponse>(`${this.apiUrl}/profile/${userId}`);
+    return this.http.delete<AuthResponse>(`${this.apiUrl}/profile/${userId}`)
+      .pipe(
+        tap(() => {
+          // Logout after deactivating account
+          this.logout();
+        })
+      );
   }
 } 
