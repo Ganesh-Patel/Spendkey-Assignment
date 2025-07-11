@@ -365,7 +365,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Ganesh Patel**  
 - **Email:** ganesh.oficial158@gmail.com  
 - **GitHub:** [Ganesh-Patel](https://github.com/Ganesh-Patel)  
-- **LinkedIn:** [Your LinkedIn Profile]  
+- **LinkedIn:** [my-portfolio](https://my-port-folio-umber.vercel.app/)  
 
 ---
 
