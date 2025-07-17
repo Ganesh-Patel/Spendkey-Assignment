@@ -24,6 +24,13 @@ export class ProductsComponent implements OnInit, OnDestroy {
   cartItemCount: number = 0;
   showMobileCategories: boolean = false;
   showMobileMenu: boolean = false;
+  
+  // New sorting and filtering properties
+  sortBy: string = 'name'; // 'name', 'price-low', 'price-high', 'availability'
+  showFilters: boolean = false;
+  priceRange: { min: number; max: number } = { min: 0, max: 10000 };
+  availabilityFilter: string = 'all'; // 'all', 'in-stock', 'out-of-stock'
+  
   private cartSubscription: Subscription | null = null;
 
   constructor(
@@ -47,6 +54,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       this.searchQuery = params['search'] || '';
       this.selectedCategory = params['category'] ? Number(params['category']) : null;
+      this.sortBy = params['sort'] || 'name';
       this.loadProducts();
     });
 
@@ -132,6 +140,106 @@ export class ProductsComponent implements OnInit, OnDestroy {
                   product.categoryName.toLowerCase().includes(query)
       );
     }
+
+    // Apply price range filter
+    this.filteredProducts = this.filteredProducts.filter(
+      product => product.price >= this.priceRange.min && product.price <= this.priceRange.max
+    );
+
+    // Apply availability filter
+    if (this.availabilityFilter === 'in-stock') {
+      this.filteredProducts = this.filteredProducts.filter(
+        product => this.isProductInStock(product)
+      );
+    } else if (this.availabilityFilter === 'out-of-stock') {
+      this.filteredProducts = this.filteredProducts.filter(
+        product => !this.isProductInStock(product)
+      );
+    }
+
+    // Apply sorting
+    this.sortProducts();
+  }
+
+  sortProducts() {
+    switch (this.sortBy) {
+      case 'name':
+        this.filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'price-low':
+        this.filteredProducts.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        this.filteredProducts.sort((a, b) => b.price - a.price);
+        break;
+      case 'availability':
+        this.filteredProducts.sort((a, b) => {
+          const aAvailable = this.isProductInStock(a) ? 1 : 0;
+          const bAvailable = this.isProductInStock(b) ? 1 : 0;
+          return bAvailable - aAvailable;
+        });
+        break;
+      default:
+        this.filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }
+
+  onSortChange() {
+    this.sortProducts();
+    this.updateQueryParams();
+  }
+
+  onPriceRangeChange() {
+    this.applyFilters();
+  }
+
+  onAvailabilityFilterChange() {
+    this.applyFilters();
+  }
+
+  toggleFilters() {
+    this.showFilters = !this.showFilters;
+  }
+
+  resetFilters() {
+    this.priceRange = { min: 0, max: 10000 };
+    this.availabilityFilter = 'all';
+    this.sortBy = 'name';
+    this.applyFilters();
+    this.updateQueryParams();
+  }
+
+  getPriceRangeText(): string {
+    if (this.priceRange.min === 0 && this.priceRange.max === 10000) {
+      return 'All Prices';
+    }
+    return `$${this.priceRange.min} - $${this.priceRange.max}`;
+  }
+
+  getAvailabilityFilterText(): string {
+    switch (this.availabilityFilter) {
+      case 'in-stock':
+        return 'In Stock Only';
+      case 'out-of-stock':
+        return 'Out of Stock Only';
+      default:
+        return 'All Products';
+    }
+  }
+
+  getSortText(): string {
+    switch (this.sortBy) {
+      case 'name':
+        return 'Name A-Z';
+      case 'price-low':
+        return 'Price: Low to High';
+      case 'price-high':
+        return 'Price: High to Low';
+      case 'availability':
+        return 'Availability';
+      default:
+        return 'Sort By';
+    }
   }
 
   loadCategories() {
@@ -185,6 +293,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
     }
     if (this.selectedCategory) {
       params.category = this.selectedCategory;
+    }
+    if (this.sortBy !== 'name') {
+      params.sort = this.sortBy;
     }
     this.router.navigate([], { queryParams: params, replaceUrl: true });
   }
@@ -252,7 +363,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   getCategoryIdByName(name: string): number | null {
     const findCategoryByName = (categories: Category[], targetName: string): Category | null => {
       for (const category of categories) {
-        if (category.name.toLowerCase() === targetName.toLowerCase()) return category;
+        if (category.name === targetName) return category;
         if (category.children) {
           const found = findCategoryByName(category.children, targetName);
           if (found) return found;
@@ -266,15 +377,11 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   getAllCategoriesClass(): string {
-    return this.selectedCategory === null 
-      ? 'bg-blue-100 text-blue-700 border-blue-200' 
-      : 'text-gray-700 hover:bg-gray-50';
+    return !this.selectedCategory ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
   }
 
   getCategoryClass(categoryId: number): string {
-    return this.selectedCategory === categoryId 
-      ? 'bg-blue-100 text-blue-700 border-blue-200' 
-      : 'text-gray-700 hover:bg-gray-50';
+    return this.selectedCategory === categoryId ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
   }
 
   addToCart(product: Product, event: MouseEvent) {
@@ -283,17 +390,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.isProductInStock(product)) {
+    if (this.isProductDisabled(product)) {
       return;
     }
-
-    // Trigger cart animation
-    this.cartAnimationService.triggerAddToCartAnimation(
-      event, 
-      product.id, 
-      product.name, 
-      product.price
-    );
 
     const request: AddToCartRequest = {
       userId: this.currentUser.id,
@@ -302,12 +401,18 @@ export class ProductsComponent implements OnInit, OnDestroy {
     };
 
     this.cartService.addToCart(request).subscribe({
-      next: (response) => {
-        console.log('Product added to cart:', response);
-        // Update cart count
-        this.cartService.getCartItemCount(this.currentUser!.id).subscribe(count => {
-          this.cartService.setCartItemCount(count);
-        });
+      next: (cartItem) => {
+        console.log('Item added to cart:', cartItem);
+        
+        // Trigger cart animation
+        this.cartAnimationService.triggerAddToCartAnimation(
+          event, 
+          product.id, 
+          product.name, 
+          product.price
+        );
+        
+        // Cart count will be updated automatically via the observable
       },
       error: (error) => {
         console.error('Error adding to cart:', error);
@@ -325,26 +430,19 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   getInitials(): string {
-    if (!this.currentUser) return '';
-    const firstName = this.currentUser.firstName || '';
-    const lastName = this.currentUser.lastName || '';
-    const username = this.currentUser.username || '';
+    const fullName = this.getFullName();
+    if (!fullName) return '';
     
-    if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    } else if (firstName) {
-      return firstName.charAt(0).toUpperCase();
-    } else if (lastName) {
-      return lastName.charAt(0).toUpperCase();
-    } else if (username) {
-      return username.charAt(0).toUpperCase();
+    const names = fullName.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
     }
-    return 'U';
+    return fullName[0].toUpperCase();
   }
 
   logout() {
     this.authService.logout();
-    this.router.navigate(['/']);
+    this.router.navigate(['/login']);
   }
 
   goToLogin() {
@@ -356,7 +454,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   goToHome() {
-    this.router.navigate(['/']);
+    this.router.navigate(['/home']);
   }
 
   goToOrders() {

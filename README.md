@@ -5,7 +5,7 @@ A full-stack e-commerce application built with Spring Boot backend and Angular f
 ## Tech Stack
 
 - **Backend**: Java Spring Boot 3.2.0
-- **Frontend**: Angular 17
+- **Frontend**: Angular 15
 - **Database**: MySQL 8.0
 - **Authentication**: JWT Tokens
 
@@ -23,6 +23,36 @@ A full-stack e-commerce application built with Spring Boot backend and Angular f
 2. **Product Listing Page** - Products for selected category (including subcategories)
 3. **Cart Page** - Display cart items with name, quantity, unit price, and total cost
 4. **Product Detail Page** - Product details with related products
+
+### Bonus Features
+- **Related Products** - Shows related products on product detail page
+- **Client-side Filtering & Sorting** - Filter by price range, availability, and sort by name/price/availability
+
+## Test User Credentials
+
+- **Email:** user-test@example.com
+- **Password:** password123
+
+You can use these credentials to log in, or register a new user via the signup page.
+
+## How to Register and Login
+
+1. **Register a new user:**
+   - Go to the signup page (`/signup`)
+   - Fill in your details (username, email, password, etc.)
+   - Click "Sign Up" to create your account
+   - You'll be automatically logged in after successful registration
+
+2. **Login with existing credentials:**
+   - Go to the login page (`/login`)
+   - Use the test credentials above or your own registered account
+   - Click "Login" to access the application
+
+3. **Browse and shop:**
+   - Browse categories and products
+   - Add items to your cart
+   - Use filtering and sorting options
+   - Complete your purchase
 
 ## Database Schema
 
@@ -120,6 +150,8 @@ CREATE TABLE cart_items (
 - **Cart Management**: Session-based cart with user authentication
 - **Product Filtering**: Products filtered by category hierarchy
 - **JWT Authentication**: Secure token-based authentication
+- **Client-side Filtering**: Price range, availability, and sorting options
+- **Related Products**: Graph-like associations between products
 
 ## API Endpoints
 
@@ -141,6 +173,13 @@ CREATE TABLE cart_items (
 4. Register/login to access cart functionality
 
 The application includes sample data that will be automatically loaded on first run.
+
+## Troubleshooting
+
+- **Backend won't start**: Make sure you're in the `ecommerce-backend` directory when running `mvn spring-boot:run`
+- **Frontend won't connect**: Ensure backend is running on `http://localhost:8080`
+- **CORS errors**: Backend CORS is configured for `http://localhost:4200`
+- **Database issues**: Check MySQL is running and credentials are correct
 
 ---
 
